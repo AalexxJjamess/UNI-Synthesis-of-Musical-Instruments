@@ -41,7 +41,7 @@
         However, the Fourier transform does not only show harmonic frequency content of a signal, it shows all frequency content of a signal.
         As such, any noise or other anharmonic frequency component, musical or not, will be shown on the transform.
         The simple inclusion of an observed frequency component may or may not be constructive to emulating the original played note.
-        \\
+        
         Early musical synthesizers were constructed to facilitate additive synthesis techniques.
         This is where a series of oscillators generate basic waveforms such as sines, sawtooth and pulse waves; a sawtooth wave can be seen in Figure \ref{sawtooth}.
         \begin{figure}[h]
@@ -85,6 +85,7 @@
         The frequency amplitude information gathered from the Fourier transform and Welch power spectral density estimate is averaged over the entire duration of the signal.
         While this information is very useful, it is limited: Much of the frequency content of a signal varies in time, and this time-varying nature of the frequency response contributes greatly to the 
         To see the amplitudes of each frequency component as a function of time, a spectrogram was used.
+
         MATLAB's \texttt{spectrogram()} function has a high degree of operability and can take many arguments.
         The function works using a 
         Used as a standalone function, it gives the user a two dimensional graph of frequency versus time, with frequency amplitude as a third, coloured dimension.
@@ -105,27 +106,58 @@
             \label{specWaterfallMando1}
         \end{figure}
 
-
-        
-
-
-
     \subsection{Synthesis}
         Additive synthesis follows the intuition found in Fourier analysis: Any continuous signal is a sum of an infinite number of sine waves.
         Thus, it should be possible to recreate any given signal by breaking it down into it's frequency components, and reproducing these frequency components as sinusoids weighted according to the frequency domain of the analysed signal.
         A programmatic approach was taken in MATLAB: A fourier transform of the recorded signal would return a set of data that may be parsed to find the frequencies of the dominant harmonics of the Mandolin.
         This was implemented by feeding the result of the fourier transform into MATLAB's \texttt{findpeaks()} function, which allows the user to define arguments as to the minimum height and prominence of maxima within a set of data, these maxima would be the harmonics.
         Using \texttt{findpeaks()} required some trial and error adjusting function arguments to avoid less useful peaks within the Fourier transform.
-        The found frequencies and their amplitudes will then be substituted into a looping summation of generic sine wave formulae, to produce the output: a complex signal with a similar frequency response to the input; importantly with the same harmonics.
+        The found frequencies and their amplitudes would then be substituted into a looping summation of generic sine wave formulae, to produce the output: a complex signal with a similar frequency response to the input; importantly with the same harmonics.
         This formula is shown in Eq.\ref{sineFormula}.
         \begin{equation}
-            y[x] = \sum_{n=1}^{N} A_n \sin{2 \pi f_n t}, \text{ where: } n = \text{harmonic number}
+            y[t] = \sum_{n=1}^{N} A_n \sin{(2 \pi f_n t)}, \text{ where: } n = \text{harmonic number}
             \label{sineFormula}
         \end{equation}
+        This produced a signal which contained similar frequency-domain characteristics as the Mandolin recording, but had no amplitude envelope.
+        Thus when played using MATLAB's \texttt{sound()} function, the synthesised sound was missing the characteristic plucked attack of a Mandolin.
+        To compensate for this, an amplitude envelope was extrapolated from the recorded signal using MATLAB's \texttt{env()} function.
+        When passing only the sample value vector to \texttt{env()} a vector of the absolute value of the sample values is returned.
+        This is problematic; the sharp changes in amplitude, as shown in Fig.\ref{env}, will result in additional high-frequency components being added to the signal when the envelope is applied to the synthesized sound.
+        \begin{figure}[h]
+            \includegraphics[scale=0.25]{images/placeholder.png}%
+            \centering
+            \caption{Envelope reflecting the absolute value of each sample.}
+            \label{env}
+        \end{figure}
+        Passing an \texttt{'rms'} argument to \texttt{env()} gave a smoother envelope than simply taking the absolute value of the time-domain waveform, this addressed the aforementioned problems with using an absolute envelope.
+        This new envelope is seen superimposed in Fig.\ref{env}.
+        To apply the envelope, simply multiplying it with the synthesized signal was sufficient.
+        Figure \ref{additiveEnv} shows the envelope applied to the synthesized signal.
+        Looking back to Fig.\ref{timeDomainMando}, we can see a similarity in the time-domain.
+        \begin{figure}[h]
+            \includegraphics[scale=0.25]{images/placeholder.png}%
+            \centering
+            \caption{Time-domain of the synthesized signal with envelope applied.}
+            \label{additiveEnv}
+        \end{figure}
 
-        
         Whilst the spectrograms shown in Figures \ref{specMando1} and \ref{specWaterfallMando1} were useful in illustrating and conveying the amplitude envelopes of a large amount of frequencies across the recording's spectrum, the additive synthesis method chosen chooses to reproduce only a specific few of the harmonic components of the recorded signal.
-        Thus, a new spectrogram function will have to be computed targeting these frequency components.
+        Thus, a new spectrogram function will have to be computed targeting the harmonics identified with \texttt{findpeaks()}.
+        MATLAB's spectrogram function thankfully allows for an argument to define target frequencies, so after passing the frequency vector extrapolated from \texttt{findpeaks()}, a two-dimensional array of amplitude envelopes for each identified frequency was generated.
+        This spectrogram can be seen in Figs.\ref{specMando2} \& \ref{specWaterfallMando2}.
+        \begin{figure}[h]
+            \includegraphics[scale=0.25]{images/placeholder.png}%
+            \centering
+            \caption{Mandolin sample value over time.}
+            \label{specMando2}
+        \end{figure}
+        \begin{figure}[h]
+            \includegraphics[scale=0.25]{images/placeholder.png}%
+            \centering
+            \caption{Mandolin sample value over time.}
+            \label{specWaterfallMando2}
+        \end{figure}
+
 \section{Discussion and Conclusions}
 \section{Appendix}
 \subsection{Code}
